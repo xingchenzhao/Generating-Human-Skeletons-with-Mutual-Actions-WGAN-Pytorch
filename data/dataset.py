@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import torch.utils.data
-from ntu_read_skeleton import read_xyz
+import utils
 
 class NTUSkeletonDataset(torch.utils.data.Dataset):
 	def __init__(self, root_dir, frames=100, pinpoint=0, pin_body=None):
@@ -31,10 +31,9 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 
 	def __getitem__(self, index):
 		fname = self.files[index]
-		f = read_xyz(os.path.join(self.root_dir, fname))
 
-		# Re-order as (# bodies, # keypoints, # frames, xy)
-		f = f.astype(np.float32).transpose((3, 2, 1, 0))
+		# (# bodies, # keypoints, # frames, xy)
+		f = utils.read(os.path.join(self.root_dir, fname))
 
 		# Pin to one of the keypoints
 		f = self._pin_skeleton(f)
@@ -64,14 +63,11 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 			return np.delete(data, to_del, axis=2)
 
 		elif diff < 0: # Interpolate
-			to_ins = np.linspace(1, num_frames0, num=-diff, 
-				endpoint=False, dtype=np.int32)
-			for i in range(to_ins.shape[0]):
-				avg = (data[..., to_ins[i]-1, :] + data[..., to_ins[i], :]) / 2
-				data = np.insert(data, to_ins[i], avg, axis=2)
-				to_ins += 1 # Insert to the next position
+			buf = np.zeros((2, 25, self.num_frames, 2), 
+					dtype=np.float64)
+			utils.ins_frames(buf, data, -diff)
 
-			return data
+			return buf
 
 		else: # Keep as the original 
 			return data
