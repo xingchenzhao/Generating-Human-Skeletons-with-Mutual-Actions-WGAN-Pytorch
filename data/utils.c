@@ -2619,7 +2619,7 @@ static PyObject *__pyx_pf_5utils_read(CYTHON_UNUSED PyObject *__pyx_self, PyObje
  * def read(fname, max_bodies=2):
  *     with open(fname, 'r') as f:             # <<<<<<<<<<<<<<
  *         num_frames = int(f.readline())
- *         keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)
+ *         keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
  */
   /*with:*/ {
     __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
@@ -2674,7 +2674,7 @@ static PyObject *__pyx_pf_5utils_read(CYTHON_UNUSED PyObject *__pyx_self, PyObje
  * def read(fname, max_bodies=2):
  *     with open(fname, 'r') as f:
  *         num_frames = int(f.readline())             # <<<<<<<<<<<<<<
- *         keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)
+ *         keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
  * 
  */
           __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_readline); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L7_error)
@@ -2706,7 +2706,7 @@ static PyObject *__pyx_pf_5utils_read(CYTHON_UNUSED PyObject *__pyx_self, PyObje
           /* "utils.pyx":10
  *     with open(fname, 'r') as f:
  *         num_frames = int(f.readline())
- *         keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)             # <<<<<<<<<<<<<<
+ *         keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)             # <<<<<<<<<<<<<<
  * 
  *         for t in range(num_frames):
  */
@@ -2726,9 +2726,9 @@ static PyObject *__pyx_pf_5utils_read(CYTHON_UNUSED PyObject *__pyx_self, PyObje
           __Pyx_INCREF(__pyx_v_num_frames);
           __Pyx_GIVEREF(__pyx_v_num_frames);
           PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_v_num_frames);
-          __Pyx_INCREF(__pyx_int_2);
-          __Pyx_GIVEREF(__pyx_int_2);
-          PyTuple_SET_ITEM(__pyx_t_2, 3, __pyx_int_2);
+          __Pyx_INCREF(__pyx_int_3);
+          __Pyx_GIVEREF(__pyx_int_3);
+          PyTuple_SET_ITEM(__pyx_t_2, 3, __pyx_int_3);
           __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_GIVEREF(__pyx_t_2);
@@ -2752,7 +2752,7 @@ static PyObject *__pyx_pf_5utils_read(CYTHON_UNUSED PyObject *__pyx_self, PyObje
           __pyx_t_9 = 0;
 
           /* "utils.pyx":12
- *         keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)
+ *         keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
  * 
  *         for t in range(num_frames):             # <<<<<<<<<<<<<<
  *             num_bodies = int(f.readline())
@@ -3237,7 +3237,7 @@ static PyObject *__pyx_pf_5utils_read(CYTHON_UNUSED PyObject *__pyx_self, PyObje
             __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
             /* "utils.pyx":12
- *         keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)
+ *         keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
  * 
  *         for t in range(num_frames):             # <<<<<<<<<<<<<<
  *             num_bodies = int(f.readline())
@@ -3251,7 +3251,7 @@ static PyObject *__pyx_pf_5utils_read(CYTHON_UNUSED PyObject *__pyx_self, PyObje
  * def read(fname, max_bodies=2):
  *     with open(fname, 'r') as f:             # <<<<<<<<<<<<<<
  *         num_frames = int(f.readline())
- *         keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)
+ *         keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
  */
         }
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -20206,7 +20206,7 @@ static int __Pyx_InitCachedConstants(void) {
  * def read(fname, max_bodies=2):
  *     with open(fname, 'r') as f:             # <<<<<<<<<<<<<<
  *         num_frames = int(f.readline())
- *         keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)
+ *         keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
  */
   __pyx_tuple__2 = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);

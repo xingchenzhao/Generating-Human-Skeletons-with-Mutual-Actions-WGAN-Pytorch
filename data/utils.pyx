@@ -7,7 +7,7 @@ cimport cython
 def read(fname, max_bodies=2):
     with open(fname, 'r') as f:
         num_frames = int(f.readline())
-        keypoints = np.zeros((2, 25, num_frames, 2), dtype=np.float64)
+        keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
 
         for t in range(num_frames):
             num_bodies = int(f.readline())
