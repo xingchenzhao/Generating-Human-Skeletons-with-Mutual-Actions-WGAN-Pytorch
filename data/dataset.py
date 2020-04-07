@@ -11,7 +11,7 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		frames: int
 			The number of frames that all data will be aligned to
 		pinpoint: int
-			The index of the keypoint to pin at (0, 0)
+			The index of the keypoint to pin at (0, 0, 0)
 		pin_body: int or None
 			The index of the body. 
 			If None, each body is normalized with respect to its pinpoint.
@@ -63,7 +63,7 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 			return np.delete(data, to_del, axis=2)
 
 		elif diff < 0: # Interpolate
-			buf = np.zeros((2, 25, self.num_frames, 2), 
+			buf = np.zeros((2, 25, self.num_frames, 3), 
 					dtype=np.float64)
 			utils.ins_frames(buf, data, -diff)
 

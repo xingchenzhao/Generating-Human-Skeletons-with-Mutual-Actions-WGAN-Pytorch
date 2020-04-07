@@ -16,12 +16,13 @@ def read(fname, max_bodies=2):
                 f.readline() # Body info, skip
                 num_keypoints = int(f.readline())
                 for k in range(num_keypoints): # Read joints
-                    x, y = f.readline().split()[:2]
+                    x, y, z = f.readline().split()[:3]
                     if m >= max_bodies:
                         continue
 
                     keypoints[m, k, t, 0] = x
                     keypoints[m, k, t, 1] = y
+                    keypoints[m, k, t, 2] = z
     return keypoints
 
 
@@ -54,7 +55,7 @@ cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
 
         for j in range(2):
             for k in range(25):
-                for l in range(2):
+                for l in range(3):
                     v = data[j, k, count, l]
                     buf[j, k, i, l] = v # Copy
                     if recur: # Calculate the mean
