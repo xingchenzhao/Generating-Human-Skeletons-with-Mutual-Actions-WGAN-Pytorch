@@ -115,18 +115,82 @@ class DisPs(nn.Module):
         return self.l(z.reshape((bs, -1)))
 
 
-# Testing
+class LSTMMapper(nn.Module):
+    def __init__(self, hidden_dim):
+        super(LSTMMapper, self).__init__()
+
+        in_out_dim = KEYPOINTS * DIM
+        self.hidden_dim = hidden_dim
+
+        self.lstm = nn.LSTM(in_out_dim, hidden_dim, 2, batch_first=True)
+        self.l = nn.Sequential(
+            *output_block(hidden_dim, in_out_dim)
+        )
+
+    def forward(self, seq):
+        bs, t, n = seq.size()
+        h0 = torch.randn(2, bs, self.hidden_dim)
+        c0 = torch.randn(2, bs, self.hidden_dim)
+
+        o0, _ = self.lstm(seq, (h0, c0))
+
+        o = self.l(o0.reshape((-1, self.hidden_dim)))
+        return o.reshape((bs, t, n))
+
+
+class VAE0(nn.Module):
+    def __init__(self, z0_dim, hidden_dim):
+        super(VAE0, self).__init__()
+
+        in_out_dim = KEYPOINTS * DIM
+        self.z0_dim = z0_dim
+
+        self.encoding = nn.Sequential(
+            *linear_block(in_out_dim, hidden_dim)
+        )
+
+        self.mu = nn.Linear(hidden_dim, z0_dim)
+        self.logvar = nn.Linear(hidden_dim, z0_dim)
+
+        l = linear_block(z0_dim, hidden_dim) + \
+            linear_block(hidden_dim, in_out_dim)
+        self.decoding = nn.Sequential(*l)
+
+    def forward(self, x=None, pis=None, mus=None, stds=None):
+        if x is None: # Generate
+            i = int(np.argwhere(np.random.multinomial(1, pis) == 1))
+
+            mu, std = mus[i], stds[i]
+
+        else: # Reconstruct
+            h = self.encoding(x)
+            mu = self.mu(h)
+            logvar = self.logvar(h)
+            std = torch.exp(logvar / 2)
+
+        z_stn = torch.randn(self.z0_dim)
+
+        z = mu + std * z_stn
+
+        x = self.decoding(z)
+
+        return x, (mu.detach().numpy(), std.detach().numpy())
+
+
+# Demo
 if __name__ == '__main__':
     z0_dim = 10
     z_dim = 20
     hidden_dim = 30
     t = 40
-    bs = 50
+    bs = 25
 
     g0 = Gen0(z0_dim)
     d0 = Dis0()
     gps = GenPs(t, z0_dim, z_dim)
     dps = DisPs(t, hidden_dim)
+    vae0 = VAE0(z0_dim, hidden_dim)
+    lstm_mapper = LSTMMapper(hidden_dim)
 
     z0 = torch.randn(bs, z0_dim)
     z = torch.randn(bs, z_dim)
@@ -139,6 +203,12 @@ if __name__ == '__main__':
     o = g0(s)
     print('GenPs', s.size())
     print('DisPs', dps(o).size())
+
+    o0_rec, (mu, std) = vae0(o[:, 0])
+    print('VAE0', o0_rec.size(), 'mu', mu.shape, 'std', std.shape)
+
+    o_map = lstm_mapper(o)
+    print('LSTM Mapper', o_map.size())
 
     o = g0(s, separate_xy=True)
     print('Final output', o.size())
