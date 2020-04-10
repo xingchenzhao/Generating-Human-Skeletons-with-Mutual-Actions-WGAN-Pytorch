@@ -148,7 +148,7 @@ for epoch in range(num_epochs):
     #         index = i*10+j
     #         axes[i][j].scatter(
     #             gen_skeleton.cpu().data[index, :, 0], gen_skeleton.cpu().data[index, :, 1])
-    rand_num = np.random.randint(low=0, high=4096)
+#     rand_num = np.random.randint(low=0, high=4096)
     plt.savefig('fig/epoch%d.jpg' %
                 (epoch))
     epoch_end = time.time()
