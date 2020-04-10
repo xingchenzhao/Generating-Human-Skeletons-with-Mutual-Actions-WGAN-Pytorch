@@ -7,7 +7,7 @@ cimport cython
 def read(fname, max_bodies=2):
     with open(fname, 'r') as f:
         num_frames = int(f.readline())
-        keypoints = np.zeros((2, 25, num_frames, 3), dtype=np.float64)
+        keypoints = np.zeros((2, num_frames, 25, 2), dtype=np.float64)
 
         for t in range(num_frames):
             num_bodies = int(f.readline())
@@ -16,13 +16,12 @@ def read(fname, max_bodies=2):
                 f.readline() # Body info, skip
                 num_keypoints = int(f.readline())
                 for k in range(num_keypoints): # Read joints
-                    x, y, z = f.readline().split()[:3]
+                    x, y = f.readline().split()[:2]
                     if m >= max_bodies:
                         continue
 
-                    keypoints[m, k, t, 0] = x
-                    keypoints[m, k, t, 1] = y
-                    keypoints[m, k, t, 2] = z
+                    keypoints[m, t, k, 0] = x
+                    keypoints[m, t, k, 1] = y
     return keypoints
 
 
@@ -31,7 +30,7 @@ def read(fname, max_bodies=2):
 @cython.initializedcheck(False)
 @cython.cdivision(True)
 cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
-    cdef int n0 = data.shape[2]
+    cdef int n0 = data.shape[1]
     cdef int i = 0
     cdef int j = 0
     cdef int k = 0
@@ -44,22 +43,22 @@ cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
     cdef np.ndarray[np.int32_t, ndim=1] to_ins = indices
     
     for i in range(to_ins.shape[0]):
-        buf[0, 0, to_ins[i], 0] = -10000001 # Marker
+        buf[0, to_ins[i], 0, 0] = -10000001 # Marker
 
     recur = False
 
-    for i in range(buf.shape[2]):
-        if buf[0, 0, i, 0] == -10000001:
+    for i in range(buf.shape[1]):
+        if buf[0, i, 0, 0] == -10000001:
             recur = True
             continue
 
         for j in range(2):
             for k in range(25):
-                for l in range(3):
-                    v = data[j, k, count, l]
-                    buf[j, k, i, l] = v # Copy
+                for l in range(2):
+                    v = data[j, count, k, l]
+                    buf[j, i, k, l] = v # Copy
                     if recur: # Calculate the mean
-                        buf[j, k, i-1, l] = (v + data[j, k, count-1, l]) * 0.5
+                        buf[j, i-1, k, l] = (v + data[j, count-1, k, l]) * 0.5
                         recur = False # Reset
 
         count += 1

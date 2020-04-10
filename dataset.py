@@ -32,7 +32,7 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 	def __getitem__(self, index):
 		fname = self.files[index]
 
-		# (# bodies, # keypoints, # frames, xy)
+		# (# bodies, # frames, # keypoints, xy)
 		f = utils.read(os.path.join(self.root_dir, fname))
 
 		# Pin to one of the keypoints
@@ -40,30 +40,30 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		
 		# Align the frames
 		f = self._align_frames(f)
-		assert f.shape[2] == self.num_frames, "wrong frames %d" % f.shape[2]
+		assert f.shape[1] == self.num_frames, "wrong frames %d" % f.shape[1]
 
 		return f
 
 	def _pin_skeleton(self, data):
 		if self.pin_body is None:
-			pin_xyz = data[:, self.pinpoint, ...]
-			data -= pin_xyz[:, None, ...]
+			pin_xyz = data[..., self.pinpoint, :]
+			data -= pin_xyz[..., None, :]
 		else:
-			pin_xyz = data[self.pin_body, self.pinpoint, ...]
-			data -= pin_xyz[None, None, ...]
+			pin_xyz = data[self.pin_body, :, self.pinpoint, :]
+			data -= pin_xyz[None, :, None, :]
 		return data
 
 	def _align_frames(self, data):
-		num_frames0 = data.shape[2]
+		num_frames0 = data.shape[1]
 		diff = num_frames0 - self.num_frames
 
 		if diff > 0: # Del
 			to_del = np.linspace(0, num_frames0, num=diff, 
 				endpoint=False, dtype=np.int32)
-			return np.delete(data, to_del, axis=2)
+			return np.delete(data, to_del, axis=1)
 
 		elif diff < 0: # Interpolate
-			buf = np.zeros((2, 25, self.num_frames, 3), 
+			buf = np.zeros((2, self.num_frames, 25, 2),
 					dtype=np.float64)
 			utils.ins_frames(buf, data, -diff)
 
