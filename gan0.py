@@ -39,10 +39,10 @@ batch_size = 512
 nc = 2
 
 # Size of z latent vector (i.e. size of generator input)
-latent_dim = 100
+latent_dim = 20
 
 # Number of training epochs
-num_epochs = 20
+num_epochs = 100
 
 # Learning rate for optimizers
 lr = 0.00005
@@ -149,7 +149,7 @@ for epoch in range(num_epochs):
     #         axes[i][j].scatter(
     #             gen_skeleton.cpu().data[index, :, 0], gen_skeleton.cpu().data[index, :, 1])
     rand_num = np.random.randint(low=0, high=4096)
-    plt.savefig('fig/%d_%d_fig.jpg' %
-                (batches_done, rand_num))
+    plt.savefig('fig/epoch%d.jpg' %
+                (epoch))
     epoch_end = time.time()
     print("time eplased: ", epoch_end-epoch_start)
