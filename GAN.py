@@ -168,14 +168,19 @@ class VAE0(nn.Module):
             logvar = self.logvar(h)
             std = torch.exp(logvar / 2)
 
-        z_stn = torch.randn(self.z0_dim)
+        z_stn = torch.randn_like(mu)
 
         z = mu + std * z_stn
 
-        x = self.decoding(z)
+        x_rec = self.decoding(z)
 
-        return x, (mu.detach().numpy(), std.detach().numpy())
+        misc = (mu, logvar, std)
 
+        if self.training:
+            x_stn = self.decoding(z_stn)
+            return x_rec, x_stn, misc
+
+        return x_rec, misc
 
 # Demo
 if __name__ == '__main__':

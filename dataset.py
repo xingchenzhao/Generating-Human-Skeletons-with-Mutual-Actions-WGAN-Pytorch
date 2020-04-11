@@ -4,7 +4,7 @@ import torch.utils.data
 import utils
 
 class NTUSkeletonDataset(torch.utils.data.Dataset):
-	def __init__(self, root_dir, frames=100, pinpoint=0, pin_body=None):
+	def __init__(self, root_dir, frames=100, pinpoint=0, pin_body=None, merge=None):
 		"""
 		root_dir: os.path or str
 			Directory to the skeleton files
@@ -13,10 +13,14 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		pinpoint: int
 			The index of the keypoint to pin at (0, 0, 0)
 		pin_body: int or None
-			The index of the body. 
+			The index of the body.
 			If None, each body is normalized with respect to its pinpoint.
 			Otherwise, all bodies are normalized with respect to the body
 			indicated by `pin_body`.
+		merge: int or None
+			If None, return the original array (# bodies, # frames, # keypoints, xy)
+			If 1, return (# bodies, # frames, # keypoints * xy). For sequence generation.
+			If 2, return (# bodies * # frames, # keypoints * xy). For single frame generation.
 		"""
 		super().__init__()
 
@@ -25,6 +29,7 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		self.num_frames = frames
 		self.pinpoint = pinpoint
 		self.pin_body = pin_body
+		self.merge = merge
 
 	def __len__(self):
 		return len(self.files)
@@ -37,10 +42,15 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 
 		# Pin to one of the keypoints
 		f = self._pin_skeleton(f)
-		
+
 		# Align the frames
 		f = self._align_frames(f)
-		assert f.shape[1] == self.num_frames, "wrong frames %d" % f.shape[1]
+		# assert f.shape[1] == self.num_frames, "wrong frames %d" % f.shape[1]
+
+		if self.merge == 1:
+			f = f.reshape((*f.shape[:2], 50))
+		elif self.merge == 2:
+			f = f.reshape((f.shape[0] * self.num_frames, 50))
 
 		return f
 
@@ -58,7 +68,7 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		diff = num_frames0 - self.num_frames
 
 		if diff > 0: # Del
-			to_del = np.linspace(0, num_frames0, num=diff, 
+			to_del = np.linspace(0, num_frames0, num=diff,
 				endpoint=False, dtype=np.int32)
 			return np.delete(data, to_del, axis=1)
 
@@ -69,5 +79,5 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 
 			return buf
 
-		else: # Keep as the original 
+		else: # Keep as the original
 			return data

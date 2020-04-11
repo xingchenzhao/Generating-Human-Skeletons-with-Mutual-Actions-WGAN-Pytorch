@@ -12,6 +12,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import time
 
+
 # Root directory for dataset
 dataroot = "data/small_dataset"
 
@@ -19,7 +20,8 @@ dataroot = "data/small_dataset"
 batch_size = 5
 
 # Size of z latent vector (i.e. size of generator input)
-latent_dim = 20
+z0_dim = 10
+hidden_dim = 30
 
 # Number of training epochs
 num_epochs = 100
@@ -38,13 +40,13 @@ cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if cuda else "cpu")
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
-generator = GAN.Gen0(latent_dim).to(device)
+generator = GAN.VAE0(z0_dim, hidden_dim).to(device)
 discriminator = GAN.Dis0().to(device)
 
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=lr)
 optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=lr)
 
-epoch_loss = np.zeros((num_epochs, 2, len(trainloader)//n_critic+1))
+epoch_loss = np.zeros((num_epochs, 4, len(trainloader)//n_critic+1))
 
 for epoch in range(num_epochs):
     j = 0
@@ -57,15 +59,17 @@ for epoch in range(num_epochs):
 
         optimizer_D.zero_grad()
 
-        # sample noise as generator input
-        z = torch.randn(real_skeleton.size(0), latent_dim).to(device)
-
         # Generate a batch of fake skeleton
-        fake_skeleton = generator(z).detach()
+        fake_rec, fake_stn, _ = generator(real_skeleton)
+        fake_rec = fake_rec.detach()
+        fake_stn = fake_stn.detach()
 
-        # adversarial loss
-        loss_D = -torch.mean(discriminator(real_skeleton)) + \
-            torch.mean(discriminator(fake_skeleton))
+        # losses
+        gan_loss = -torch.mean(discriminator(real_skeleton)) \
+                   + torch.mean(discriminator(fake_rec)) \
+                   + torch.mean(discriminator(fake_stn))
+
+        loss_D = gan_loss
         loss_D.backward()
         optimizer_D.step()
 
@@ -77,22 +81,29 @@ for epoch in range(num_epochs):
         if i % n_critic == 0:
             optimizer_G.zero_grad()
 
-            # Generate a batch of
-            gen_skeleton = generator(z)
-            # adversarial loss
-            loss_G = -torch.mean(discriminator(gen_skeleton))
+            fake_rec, fake_stn, (mu, logvar, std) = generator(real_skeleton)
+            rec_loss = torch.mean((fake_rec - real_skeleton)**2)
+            kl_loss = -0.5 * torch.mean(logvar - std**2 - mu**2 + 1)
+            gan_loss = torch.mean(discriminator(fake_rec)) \
+                      + torch.mean(discriminator(fake_stn))
+
+            loss_G = rec_loss + kl_loss - gan_loss
 
             loss_G.backward()
             optimizer_G.step()
 
-            epoch_loss[epoch, 0, j] = loss_D.item()
-            epoch_loss[epoch, 1, j] = loss_G.item()
+            epoch_loss[epoch, 0, j] = rec_loss.item()
+            epoch_loss[epoch, 1, j] = kl_loss.item()
+            epoch_loss[epoch, 2, j] = loss_D.item()
+            epoch_loss[epoch, 3, j] = loss_G.item()
             j += 1
 
     epoch_end = time.time()
     print('[%d] time eplased: %.3f' % (epoch, epoch_end-epoch_start))
-    print('\tLoss D', epoch_loss[epoch, 0].mean(axis=-1))
-    print('\tLoss G', epoch_loss[epoch, 1].mean(axis=-1))
+    print('\tRec', epoch_loss[epoch, 0].mean(axis=-1))
+    print('\tKL', epoch_loss[epoch, 1].mean(axis=-1))
+    print('\tLoss D', epoch_loss[epoch, 2].mean(axis=-1))
+    print('\tLoss G', epoch_loss[epoch, 3].mean(axis=-1))
 
 fig, ax = plt.subplots()
 fig.tight_layout()
