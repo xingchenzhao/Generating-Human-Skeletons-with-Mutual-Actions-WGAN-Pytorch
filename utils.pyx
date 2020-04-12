@@ -41,7 +41,7 @@ cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
     indices = np.linspace(1, n0, num=diff, endpoint=False, dtype=np.int32) \
               + np.arange(diff, dtype=np.int32)
     cdef np.ndarray[np.int32_t, ndim=1] to_ins = indices
-    
+
     for i in range(to_ins.shape[0]):
         buf[0, to_ins[i], 0, 0] = -10000001 # Marker
 
@@ -61,5 +61,4 @@ cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
                         buf[j, i-1, k, l] = (v + data[j, count-1, k, l]) * 0.5
 
         recur = False # Reset
-
         count += 1

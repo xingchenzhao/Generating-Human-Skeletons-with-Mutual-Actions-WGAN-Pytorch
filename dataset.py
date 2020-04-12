@@ -52,7 +52,7 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		# At most 1
 		if self.scale_each_body:
 			for i in range(4):
-				f[i//2, ..., i%2] = f[i//2, ..., i%2].max()
+				f[i//2, ..., i%2] /= np.abs(f[i//2, ..., i%2]).max()
 
 		if self.merge == 1:
 			f = f.reshape((*f.shape[:2], 50))
