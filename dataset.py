@@ -4,7 +4,8 @@ import torch.utils.data
 import utils
 
 class NTUSkeletonDataset(torch.utils.data.Dataset):
-	def __init__(self, root_dir, frames=100, pinpoint=0, pin_body=None, merge=None):
+	def __init__(self, root_dir, frames=100, pinpoint=0, pin_body=None, merge=None,
+				 scale_each_body=True):
 		"""
 		root_dir: os.path or str
 			Directory to the skeleton files
@@ -30,6 +31,7 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		self.pinpoint = pinpoint
 		self.pin_body = pin_body
 		self.merge = merge
+		self.scale_each_body = scale_each_body
 
 	def __len__(self):
 		return len(self.files)
@@ -46,6 +48,11 @@ class NTUSkeletonDataset(torch.utils.data.Dataset):
 		# Align the frames
 		f = self._align_frames(f)
 		# assert f.shape[1] == self.num_frames, "wrong frames %d" % f.shape[1]
+
+		# At most 1
+		if self.scale_each_body:
+			for i in range(4):
+				f[i//2, ..., i%2] = f[i//2, ..., i%2].max()
 
 		if self.merge == 1:
 			f = f.reshape((*f.shape[:2], 50))

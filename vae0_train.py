@@ -20,19 +20,26 @@ dataroot = "data/small_dataset"
 batch_size = 5
 
 # Size of z latent vector (i.e. size of generator input)
-z0_dim = 10
-hidden_dim = 30
+z0_dim = 20
+hidden_dim = [50, 30]
 
 # Number of training epochs
-num_epochs = 100
+num_epochs = 200
 
 # Learning rate for optimizers
-lr = 0.0001
+lrG = 0.00005
+lrD = 0.00005
 
 clip_value = 0.01
-n_critic = 5
+n_critic = 20
 
-trainset = NTUSkeletonDataset(root_dir=dataroot, pinpoint=10, merge=2)
+joint_list = ((0, 1), (1, 2), (2, 3), (20, 8), (20, 4), (0, 16), (0, 12),
+              (4, 5), (5, 6), (6, 7), (7, 21), (7, 22),
+              (8, 9), (9, 10), (10, 11), (11, 23), (11, 24),
+              (16, 17), (17, 18), (18, 19),
+              (12, 13), (13, 14), (14, 15))
+
+trainset = NTUSkeletonDataset(root_dir=dataroot, pinpoint=1, merge=2)
 trainloader = DataLoader(trainset, batch_size=batch_size,
                          shuffle=True, num_workers=4)
 
@@ -43,10 +50,12 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 generator = GAN.VAE0(z0_dim, hidden_dim).to(device)
 discriminator = GAN.Dis0().to(device)
 
-optimizer_G = torch.optim.Adam(generator.parameters(), lr=lr)
-optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=lr)
+optimizer_G = torch.optim.RMSprop(generator.parameters(), lr=lrG)
+optimizer_D = torch.optim.RMSprop(discriminator.parameters(), lr=lrD)
 
-epoch_loss = np.zeros((num_epochs, 4, len(trainloader)//n_critic+1))
+epoch_loss = np.zeros((num_epochs, 5, len(trainloader)//n_critic+1))
+
+mse = nn.MSELoss()
 
 for epoch in range(num_epochs):
     j = 0
@@ -55,22 +64,27 @@ for epoch in range(num_epochs):
         size = (-1, data.size(-1))
         data = data.reshape(size)
 
+        optimizer_D.zero_grad()
+
         real_skeleton = Variable(data.type(Tensor)).to(device)
 
-        optimizer_D.zero_grad()
+        critic_real = -torch.mean(discriminator(real_skeleton))
+        # critic_real.backward()
 
         # Generate a batch of fake skeleton
         fake_rec, fake_stn, _ = generator(real_skeleton)
+
         fake_rec = fake_rec.detach()
         fake_stn = fake_stn.detach()
 
         # losses
-        gan_loss = -torch.mean(discriminator(real_skeleton)) \
-                   + torch.mean(discriminator(fake_rec)) \
-                   + torch.mean(discriminator(fake_stn))
+        critic_fake = torch.mean(discriminator(fake_rec)) \
+                      + torch.mean(discriminator(fake_stn))
+        # critic_fake.backward()
 
-        loss_D = gan_loss
+        loss_D = critic_real + critic_fake
         loss_D.backward()
+
         optimizer_D.step()
 
         # clip weights of discriminator
@@ -78,43 +92,38 @@ for epoch in range(num_epochs):
             p.data.clamp_(-clip_value, clip_value)
 
         # Train the generator every n_critic iterations:
-        if i % n_critic == 0:
+        if i % n_critic == n_critic - 1:
             optimizer_G.zero_grad()
 
             fake_rec, fake_stn, (mu, logvar, std) = generator(real_skeleton)
-            rec_loss = torch.mean((fake_rec - real_skeleton)**2)
-            kl_loss = -0.5 * torch.mean(logvar - std**2 - mu**2 + 1)
-            gan_loss = torch.mean(discriminator(fake_rec)) \
-                      + torch.mean(discriminator(fake_stn))
 
-            loss_G = rec_loss + kl_loss - gan_loss
+            rec_loss = mse(fake_rec, real_skeleton)
+            # rec_loss.backward()
 
+            kl_loss = -0.5 * torch.sum(logvar - std**2 - mu**2 + 1)
+            # kl_loss.backward()
+
+            gan_loss = -torch.mean(discriminator(fake_rec)) \
+                       -torch.mean(discriminator(fake_stn))
+            # gan_loss.backward()
+
+            loss_G = rec_loss + kl_loss + gan_loss
             loss_G.backward()
+
             optimizer_G.step()
 
-            epoch_loss[epoch, 0, j] = rec_loss.item()
-            epoch_loss[epoch, 1, j] = kl_loss.item()
-            epoch_loss[epoch, 2, j] = loss_D.item()
-            epoch_loss[epoch, 3, j] = loss_G.item()
+            for k, l in enumerate((rec_loss, kl_loss, gan_loss,
+                                   critic_real, critic_fake)):
+                epoch_loss[epoch, k, j] = l.item()
             j += 1
+
 
     epoch_end = time.time()
     print('[%d] time eplased: %.3f' % (epoch, epoch_end-epoch_start))
-    print('\tRec', epoch_loss[epoch, 0].mean(axis=-1))
-    print('\tKL', epoch_loss[epoch, 1].mean(axis=-1))
-    print('\tLoss D', epoch_loss[epoch, 2].mean(axis=-1))
-    print('\tLoss G', epoch_loss[epoch, 3].mean(axis=-1))
+    for k, l in enumerate(('Rec', 'KL', 'G', 'critic real', 'critic fake')):
+        print('\t', l, epoch_loss[epoch, k].mean(axis=-1))
 
-fig, ax = plt.subplots()
-fig.tight_layout()
-t = np.arange(num_epochs)
-mean_G = epoch_loss[:,0,:].mean(axis=1)
-mean_D = epoch_loss[:,1,:].mean(axis=1)
-std_G = epoch_loss[:,0,:].std(axis=1)
-std_D = epoch_loss[:,1,:].std(axis=1)
-ax.plot(t, mean_G, label='G')
-ax.plot(t, mean_D, label='D')
-ax.fill_between(t, mean_G + std_G, mean_G - std_G, alpha=0.1)
-ax.fill_between(t, mean_D + std_D, mean_D - std_D, alpha=0.1)
-fig.legend()
-fig.savefig('train.png')
+    if epoch % 20 == 19:
+        torch.save(generator, 'vae0_%d.pt' % epoch)
+
+np.save('vae0_epoch_loss.npy', epoch_loss)

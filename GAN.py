@@ -1,5 +1,6 @@
 import torch
-from torch import nn, optim
+from torch import nn
+from torch.autograd import Variable
 
 KEYPOINTS = 25
 DIM = 2 # x and y
@@ -20,16 +21,16 @@ class Basic(nn.Module):
         super(Basic, self).__init__()
 
         self.block1 = nn.Sequential(
-            *linear_block(in_dim, 4096, batch_norm)
+            *linear_block(in_dim, 1024, batch_norm)
         )
 
         l = []
         for _ in range(2):
-            l += linear_block(4096, 4096, batch_norm)
+            l += linear_block(1024, 1024, batch_norm)
         self.block2 = nn.Sequential(*l)
 
         self.block3 = nn.Sequential(
-            *output_block(4096, out_dim)
+            *output_block(1024, out_dim)
         )
 
     def forward(self, z):
@@ -145,16 +146,30 @@ class VAE0(nn.Module):
         in_out_dim = KEYPOINTS * DIM
         self.z0_dim = z0_dim
 
-        self.encoding = nn.Sequential(
-            *linear_block(in_out_dim, hidden_dim)
+        l = []
+        h_prev = in_out_dim
+        for h in hidden_dim:
+            l += linear_block(h_prev, h)
+            h_prev = h
+
+        self.encoding = nn.Sequential(*l)
+
+        self.mu = nn.Sequential(
+            *output_block(hidden_dim[-1], z0_dim)
+        )
+        self.logvar = nn.Sequential(
+            *output_block(hidden_dim[-1], z0_dim)
         )
 
-        self.mu = nn.Linear(hidden_dim, z0_dim)
-        self.logvar = nn.Linear(hidden_dim, z0_dim)
-
-        l = linear_block(z0_dim, hidden_dim) + \
-            linear_block(hidden_dim, in_out_dim)
+        l = []
+        h_prev = z0_dim
+        hidden_dim.reverse()
+        for h in hidden_dim:
+            l += linear_block(h_prev, h)
+            h_prev = h
+        l += output_block(hidden_dim[-1], in_out_dim)
         self.decoding = nn.Sequential(*l)
+
 
     def forward(self, x=None, pis=None, mus=None, stds=None):
         if x is None: # Generate
@@ -168,7 +183,7 @@ class VAE0(nn.Module):
             logvar = self.logvar(h)
             std = torch.exp(logvar / 2)
 
-        z_stn = torch.randn_like(mu)
+        z_stn = Variable(torch.randn_like(mu, requires_grad=False))
 
         z = mu + std * z_stn
 
