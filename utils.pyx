@@ -59,6 +59,7 @@ cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
                     buf[j, i, k, l] = v # Copy
                     if recur: # Calculate the mean
                         buf[j, i-1, k, l] = (v + data[j, count-1, k, l]) * 0.5
-                        recur = False # Reset
+
+        recur = False # Reset
 
         count += 1
