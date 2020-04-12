@@ -9,17 +9,19 @@ bone_list = ((1, 2), (2, 21), (21, 3), (3, 4),
              (1, 17), (17, 18), (18, 19), (19, 20))
 bone_list = np.array(bone_list) - 1
 
-def train_plot(fname):
+def train_plot(fname, lnames):
     epoch_loss = np.load(fname)
 
     fig, ax = plt.subplots()
-    fig.tight_layout()
-    t = np.arange(num_epochs)
-    for k, l in enumerate():
+    fig.tight_layout(pad=0.5)
+    t = np.arange(epoch_loss.shape[0])
+    for k, l in enumerate(lnames):
         mean = epoch_loss[:,k,:].mean(axis=1)
         std = epoch_loss[:,k,:].std(axis=1)
         ax.plot(t, mean, label=l)
         ax.fill_between(t, mean + std, mean - std, alpha=0.1)
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Loss')
     fig.legend()
     fig.savefig(fname[:-4] + '.png')
 
@@ -49,6 +51,8 @@ def draw_skeleton(skeleton, step=3, max_bodies=1, max_frames=(4, 4),
 if __name__ == '__main__':
     vae0fname = 'vae0_epoch_loss.npy'
     vae0labels = ('Rec', 'KL', 'GAN', 'critic real', 'critic fake')
+    train_plot(vae0fname, vae0labels)
 
     gan0fname = 'gan0_epoch_loss.npy'
     gan0labels = ('G', 'critic real', 'critic fake')
+    train_plot(gan0fname, gan0labels)
