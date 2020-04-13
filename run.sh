@@ -8,7 +8,7 @@
 #SBATCH --mem=12000
 #SBATCH --mail-user=zig9@pitt.edu #send email to this address if ...
 #SBATCH --mail-type=END,FAIL
-#SBATCH --time=0-06:30:00 
+#SBATCH --time=0-05:00:00 
 module purge #make sure the modules environment is sane
 module load python/3.7.0 cuda/10.1 venv/wrap
 workon pytorch

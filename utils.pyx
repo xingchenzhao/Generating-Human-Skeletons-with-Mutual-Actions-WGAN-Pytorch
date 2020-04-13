@@ -45,11 +45,11 @@ cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
     for i in range(to_ins.shape[0]):
         buf[0, to_ins[i], 0, 0] = -10000001 # Marker
 
-    recur = False
+    recur = 0
 
     for i in range(buf.shape[1]):
         if buf[0, i, 0, 0] == -10000001:
-            recur = True
+            recur += 1
             continue
 
         for j in range(2):
@@ -57,8 +57,9 @@ cpdef void ins_frames(double[:,:,:,::1] buf, double[:,:,:,::1] data, int diff):
                 for l in range(2):
                     v = data[j, count, k, l]
                     buf[j, i, k, l] = v # Copy
-                    if recur: # Calculate the mean
+                    if recur != 0: # Calculate the mean
                         buf[j, i-1, k, l] = (v + data[j, count-1, k, l]) * 0.5
 
-        recur = False # Reset
+        if recur > 0: recur -= 1 # Reset
+
         count += 1

@@ -24,7 +24,7 @@ z0_dim = 20
 hidden_dim = [50, 30]
 
 # Number of training epochs
-num_epochs = 200
+num_epochs = 400
 
 # Learning rate for optimizers
 lrG = 0.00005
