@@ -1,4 +1,5 @@
 import os
+import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -101,6 +102,7 @@ for epoch in range(num_epochs):
         print('\t', l, epoch_loss[epoch, k].mean(axis=-1))
 
     if epoch % 20 == 19:
-        torch.save(generator, 'gan0_%d.pt' % epoch)
+        m = copy.deepcopy(generator.state_dict())
+        torch.save(m, 'gen0_%d.pt' % epoch)
 
-np.save('gan0_epoch_loss.npy', epoch_loss)
+np.save('gen0_epoch_loss.npy', epoch_loss)

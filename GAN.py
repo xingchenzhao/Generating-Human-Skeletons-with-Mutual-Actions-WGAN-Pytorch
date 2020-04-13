@@ -48,14 +48,14 @@ class Gen0(Basic):
         self.z0_dim = z0_dim
         super(Gen0, self).__init__(z0_dim, KEYPOINTS * DIM)
 
-    def forward(self, seq, separate_xy=False):
-        l = seq.size()
+    def forward(self, z, separate_xy=False):
+        l = z.size()
         if len(l) == 3: # merge 0 and 1 axis
-            t = seq.size(1)
-            o = super(Gen0, self).forward(seq.reshape((-1, self.z0_dim)))
+            t = z.size(1)
+            o = super(Gen0, self).forward(z.reshape((-1, self.z0_dim)))
 
         else: # Assume it is 2 or 1
-            o = super(Gen0, self).forward(seq)
+            o = super(Gen0, self).forward(z)
 
         if separate_xy:
             return o.reshape((*l[:-1], KEYPOINTS, DIM))
@@ -171,11 +171,10 @@ class VAE0(nn.Module):
         self.decoding = nn.Sequential(*l)
 
 
-    def forward(self, x=None, pis=None, mus=None, stds=None):
+    def forward(self, x=None, z=None):
         if x is None: # Generate
-            i = int(np.argwhere(np.random.multinomial(1, pis) == 1))
-
-            mu, std = mus[i], stds[i]
+            assert not (z is None)
+            self.training = False
 
         else: # Reconstruct
             h = self.encoding(x)
@@ -183,19 +182,19 @@ class VAE0(nn.Module):
             logvar = self.logvar(h)
             std = torch.exp(logvar / 2)
 
-        z_stn = Variable(torch.randn_like(mu, requires_grad=False))
+            z_stn = Variable(torch.randn_like(mu, requires_grad=False))
 
-        z = mu + std * z_stn
+            z = mu + std * z_stn
+
+            misc = (mu, logvar, std)
 
         x_rec = self.decoding(z)
-
-        misc = (mu, logvar, std)
 
         if self.training:
             x_stn = self.decoding(z_stn)
             return x_rec, x_stn, misc
 
-        return x_rec, misc
+        return x_rec
 
 # Demo
 if __name__ == '__main__':

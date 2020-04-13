@@ -13,7 +13,7 @@ def train_plot(fname, lnames):
     epoch_loss = np.load(fname)
 
     fig, ax = plt.subplots()
-    fig.tight_layout(pad=0.5)
+    fig.tight_layout()
     t = np.arange(epoch_loss.shape[0])
     for k, l in enumerate(lnames):
         mean = epoch_loss[:,k,:].mean(axis=1)

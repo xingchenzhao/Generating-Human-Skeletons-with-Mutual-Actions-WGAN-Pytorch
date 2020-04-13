@@ -1,4 +1,5 @@
 import os
+import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -24,7 +25,7 @@ z0_dim = 20
 hidden_dim = [50, 30]
 
 # Number of training epochs
-num_epochs = 400
+num_epochs = 200
 
 # Learning rate for optimizers
 lrG = 0.00005
@@ -32,12 +33,6 @@ lrD = 0.00005
 
 clip_value = 0.01
 n_critic = 20
-
-joint_list = ((0, 1), (1, 2), (2, 3), (20, 8), (20, 4), (0, 16), (0, 12),
-              (4, 5), (5, 6), (6, 7), (7, 21), (7, 22),
-              (8, 9), (9, 10), (10, 11), (11, 23), (11, 24),
-              (16, 17), (17, 18), (18, 19),
-              (12, 13), (13, 14), (14, 15))
 
 trainset = NTUSkeletonDataset(root_dir=dataroot, pinpoint=1, merge=2)
 trainloader = DataLoader(trainset, batch_size=batch_size,
@@ -104,7 +99,7 @@ for epoch in range(num_epochs):
             # kl_loss.backward()
 
             gan_loss = -torch.mean(discriminator(fake_rec)) \
-                       -torch.mean(discriminator(fake_stn))
+                       -10 * torch.mean(discriminator(fake_stn))
             # gan_loss.backward()
 
             loss_G = rec_loss + kl_loss + gan_loss
@@ -124,6 +119,7 @@ for epoch in range(num_epochs):
         print('\t', l, epoch_loss[epoch, k].mean(axis=-1))
 
     if epoch % 20 == 19:
-        torch.save(generator, 'vae0_%d.pt' % epoch)
+        m = copy.deepcopy(generator.state_dict())
+        torch.save(m, 'vae0_%d.pt' % epoch)
 
 np.save('vae0_epoch_loss.npy', epoch_loss)
