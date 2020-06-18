@@ -3,6 +3,9 @@ Visual Storytelling with Stick Figures
 
 https://docs.google.com/document/d/14Y-RiIpO2LR3FJ-36p4NKJM19XMOw_8bQXpj0W8pGWY/edit
 
+## Presentation
+
+https://docs.google.com/presentation/d/1kndYY5dE2YXOYpx-p2MBUtCsYkyzE4q7Rt9Cze7lu9o/edit?usp=sharing
 
 # Useful Resources:
 
