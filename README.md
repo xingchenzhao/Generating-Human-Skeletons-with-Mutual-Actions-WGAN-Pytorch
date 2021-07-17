@@ -1,6 +1,6 @@
-# deep-learning-team-project
-Visual Storytelling with Stick Figures
+#Visual Storytelling with Stick Figures (Deep Learning, WGAN, Pytorch)
 
+Try the method in colab: https://colab.research.google.com/drive/15UqfarKCjc_UU87HFUFGf7gXZBegeN3O#scrollTo=7KdNBB3FEBBK
 https://docs.google.com/document/d/14Y-RiIpO2LR3FJ-36p4NKJM19XMOw_8bQXpj0W8pGWY/edit
 
 ## Presentation
