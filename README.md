@@ -1,4 +1,4 @@
-# Visual Storytelling with Stick Figures (Deep Learning, WGAN, Pytorch)
+# Generating Human Skeletons with Mutual Actions (Deep Learning, WGAN, Pytorch)
 
 Try the method in colab: https://colab.research.google.com/drive/15UqfarKCjc_UU87HFUFGf7gXZBegeN3O#scrollTo=7KdNBB3FEBBK
 
